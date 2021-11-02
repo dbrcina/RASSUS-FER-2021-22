@@ -1,4 +1,4 @@
-package hr.fer.tel.rassus.server.controllers;
+package hr.fer.tel.rassus.server.controller;
 
 
 public class ReadingController {
