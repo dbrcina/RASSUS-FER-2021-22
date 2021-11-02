@@ -14,20 +14,20 @@ import java.util.Collection;
 @RequestMapping("/sensors")
 public class SensorResourceController {
 
-    private final SensorService sensorService;
+    private final SensorService service;
 
     public SensorResourceController(SensorService sensorService) {
-        this.sensorService = sensorService;
+        this.service = sensorService;
     }
 
     @GetMapping("")
     public Collection<RetrieveSensorDto> retrieveSensors() {
-        return sensorService.retrieveSensors();
+        return service.retrieveSensors();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> retrieveSensor(@PathVariable("id") long id) {
-        RetrieveSensorDto retrieveSensorDto = sensorService.retrieveSensor(id);
+        RetrieveSensorDto retrieveSensorDto = service.retrieveSensor(id);
         if (retrieveSensorDto == null) {
             return ResponseEntity.notFound().build();
         }
@@ -36,20 +36,16 @@ public class SensorResourceController {
 
     @GetMapping("/closest/{id}")
     public ResponseEntity<?> retrieveClosestSensor(@PathVariable("id") long id) {
-        RetrieveSensorDto fromSensor = sensorService.retrieveSensor(id);
-        if (fromSensor == null) {
+        RetrieveSensorDto retrieveSensorDto = service.retrieveClosestSensor(id);
+        if (retrieveSensorDto == null) {
             return ResponseEntity.notFound().build();
         }
-        RetrieveSensorDto closestSensor = sensorService.retrieveClosestSensor(fromSensor);
-        if (closestSensor == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(closestSensor);
+        return ResponseEntity.ok(retrieveSensorDto);
     }
 
     @PostMapping("")
     public ResponseEntity<?> registerSensor(@RequestBody RegisterSensorDto registerSensorDto) {
-        long id = sensorService.registerSensor(registerSensorDto);
+        long id = service.registerSensor(registerSensorDto);
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{id}")

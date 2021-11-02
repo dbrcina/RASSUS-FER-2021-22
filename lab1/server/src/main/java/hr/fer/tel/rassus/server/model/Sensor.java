@@ -1,8 +1,7 @@
 package hr.fer.tel.rassus.server.model;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
+import java.util.Set;
 
 @Entity
 public class Sensor {
@@ -14,6 +13,8 @@ public class Sensor {
     private double longitude;
     private String ip;
     private int port;
+    @OneToMany(mappedBy = "sensor", cascade = CascadeType.ALL)
+    private Set<Reading> readings;
 
     public long getId() {
         return id;
@@ -49,6 +50,10 @@ public class Sensor {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public Set<Reading> getReadings() {
+        return readings;
     }
 
 }

@@ -20,28 +20,27 @@ public class SensorService {
         this.repository = repository;
     }
 
-    private RetrieveSensorDto toRetrieveSensorDto(Sensor sensor) {
-        return new RetrieveSensorDto(
-                sensor.getId(),
-                sensor.getLatitude(),
-                sensor.getLongitude(),
-                sensor.getIp(),
-                sensor.getPort());
-    }
-
     public Collection<RetrieveSensorDto> retrieveSensors() {
         return repository.findAll().stream()
-                .map(this::toRetrieveSensorDto)
+                .map(sensor -> toRetrieveSensorDto(sensor, true))
                 .collect(Collectors.toList());
     }
 
     public RetrieveSensorDto retrieveSensor(long id) {
-        return repository.findById(id)
-                .map(this::toRetrieveSensorDto)
-                .orElse(null);
+        Sensor sensor = retrieveSensorInternal(id);
+        if (sensor != null) {
+            return toRetrieveSensorDto(sensor, false);
+        }
+        return null;
     }
 
-    public RetrieveSensorDto retrieveClosestSensor(RetrieveSensorDto fromSensor) {
+    protected Sensor retrieveSensorInternal(long id) {
+        return repository.findById(id).orElse(null);
+    }
+
+    public RetrieveSensorDto retrieveClosestSensor(long id) {
+        Sensor fromSensor = retrieveSensorInternal(id);
+        if (fromSensor == null) return null;
         Collection<Sensor> sensors = repository.findAll();
         Sensor closestSensor = null;
         double minDistance = Double.MAX_VALUE;
@@ -63,17 +62,26 @@ public class SensorService {
                 }
             }
         }
-        return closestSensor != null ? toRetrieveSensorDto(closestSensor) : null;
+        return closestSensor != null ? toRetrieveSensorDto(closestSensor, true) : null;
     }
 
-    public long registerSensor(RegisterSensorDto createSensorDto) {
+    public long registerSensor(RegisterSensorDto registerSensorDto) {
         Sensor sensor = new Sensor();
-        sensor.setLatitude(createSensorDto.getLatitude());
-        sensor.setLongitude(createSensorDto.getLongitude());
-        sensor.setIp(createSensorDto.getIp());
-        sensor.setPort(createSensorDto.getPort());
+        sensor.setLatitude(registerSensorDto.getLatitude());
+        sensor.setLongitude(registerSensorDto.getLongitude());
+        sensor.setIp(registerSensorDto.getIp());
+        sensor.setPort(registerSensorDto.getPort());
         sensor = repository.save(sensor);
         return sensor.getId();
+    }
+
+    private RetrieveSensorDto toRetrieveSensorDto(Sensor sensor, boolean includeId) {
+        return new RetrieveSensorDto(
+                includeId ? sensor.getId() : null,
+                sensor.getLatitude(),
+                sensor.getLongitude(),
+                sensor.getIp(),
+                sensor.getPort());
     }
 
 }

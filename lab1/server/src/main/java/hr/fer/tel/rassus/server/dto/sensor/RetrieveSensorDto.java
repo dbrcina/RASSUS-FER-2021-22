@@ -2,13 +2,13 @@ package hr.fer.tel.rassus.server.dto.sensor;
 
 public class RetrieveSensorDto {
 
-    private final long id;
+    private final Long id;
     private final double latitude;
     private final double longitude;
     private final String ip;
     private final int port;
 
-    public RetrieveSensorDto(long id, double latitude, double longitude, String ip, int port) {
+    public RetrieveSensorDto(Long id, double latitude, double longitude, String ip, int port) {
         this.id = id;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -16,7 +16,7 @@ public class RetrieveSensorDto {
         this.port = port;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
