@@ -1,0 +1,86 @@
+plugins {
+    id 'java'
+    // ASSUMES GRADLE 5.6 OR HIGHER. Use plugin version 0.8.10 with earlier gradle versions
+    id 'com.google.protobuf' version '0.8.17'
+    // Generate IntelliJ IDEA's .idea & .iml project files
+    id 'idea'
+    id 'eclipse'
+}
+
+group = 'hr.fer.tel.rassus'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+
+    //################ GRPC ################
+    implementation 'io.grpc:grpc-netty-shaded:1.41.0'
+    implementation 'io.grpc:grpc-protobuf:1.41.0'
+    implementation 'io.grpc:grpc-stub:1.41.0'
+    compileOnly 'org.apache.tomcat:annotations-api:6.0.53' // necessary for Java 9+
+    //################ GRPC ################
+
+    testImplementation "junit:junit:4.12"
+    testImplementation "org.mockito:mockito-core:3.4.0"
+
+    // Retrofit
+    implementation 'com.squareup.retrofit2:retrofit:2.6.2'
+    implementation 'com.squareup.retrofit2:converter-jackson:2.6.2'
+}
+
+// Inform IDEs like IntelliJ IDEA, Eclipse or NetBeans about the generated code.
+sourceSets {
+    main {
+        // Remember to refresh gradle project in Eclipse (F5)
+        java {
+            srcDirs 'build/generated/source/proto/main/grpc'
+            srcDirs 'build/generated/source/proto/main/java'
+        }
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+//################ GRPC ################
+// Inform IDEs like IntelliJ IDEA, Eclipse or NetBeans about the generated code.
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.17.3"
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.41.0'
+        }
+    }
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+        }
+        all().each {
+            it.group = 'build'
+        }
+    }
+}
+//################ GRPC ################
+task runExampleClient(type: JavaExec) {
+    group = "exec"
+    description = "Run client with JavaExecTask"
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "hr.fer.tel.rassus.examples.SimpleUnaryRPCClient"
+    standardInput = System.in
+}
+
+task runExampleServer(type: JavaExec) {
+    group = "exec"
+    description = "Run client with JavaExecTask"
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "hr.fer.tel.rassus.examples.SimpleUnaryRPCServer"
+}

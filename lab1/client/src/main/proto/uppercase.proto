@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "hr.fer.tel.rassus.examples";
+
+package hr.fer.tel.rassus;
+
+// The uppercase service definition.
+service Uppercase {
+  // Sends a greeting
+  rpc RequestUppercase (Message) returns (Message) {}
+}
+
+// The response message containing the greetings
+message Message {
+  string  payload = 1;
+//  string  otherPayload = 2;
+}
