@@ -39,7 +39,6 @@ public class RetrofitImplementation implements RestInterface {
             }
             String location = response.headers().get("Location");
             long id = Long.parseLong(location.substring(location.lastIndexOf("/") + 1));
-            LOGGER.info(String.format("New sensor is registered under id %d!", id));
             return id;
         } catch (IOException | NullPointerException e) {
             throw new RuntimeException(e);
@@ -74,7 +73,6 @@ public class RetrofitImplementation implements RestInterface {
             }
             String location = response.headers().get("Location");
             long id = Long.parseLong(location.substring(location.lastIndexOf("/") + 1));
-            LOGGER.info(String.format("New reading for sensorId %d is registered under id %d!", sensorId, id));
             return id;
         } catch (IOException | NullPointerException e) {
             throw new RuntimeException(e);
