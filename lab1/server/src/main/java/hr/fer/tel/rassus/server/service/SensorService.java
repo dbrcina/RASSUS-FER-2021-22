@@ -62,7 +62,7 @@ public class SensorService {
                 }
             }
         }
-        return closestSensor != null ? toRetrieveSensorDto(closestSensor, true) : null;
+        return closestSensor != null ? toRetrieveSensorDto(closestSensor, false) : null;
     }
 
     public long registerSensor(RegisterSensorDto registerSensorDto) {

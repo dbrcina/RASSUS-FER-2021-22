@@ -24,7 +24,7 @@ public class ReadingResourceController {
     public ResponseEntity<?> retrieveReadings(@PathVariable("sensorId") long sensorId) {
         Collection<RetrieveReadingDto> retrieveReadingDtos = service.retrieveReadings(sensorId);
         if (retrieveReadingDtos == null) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(retrieveReadingDtos);
     }
@@ -44,7 +44,7 @@ public class ReadingResourceController {
                                              @RequestBody RegisterReadingDto registerReadingDto) {
         Long readingId = service.registerReading(sensorId, registerReadingDto);
         if (readingId == null) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.noContent().build();
         }
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
