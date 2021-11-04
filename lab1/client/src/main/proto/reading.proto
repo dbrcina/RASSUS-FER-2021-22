@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "hr.fer.tel.rassus.client";
+
+package hr.fer.tel.rassus;
+
+// The reading service definition.
+service Reading {
+  // Sends a reading.
+  rpc RequestReading (InputMessage) returns (OutputMessage) {}
+}
+
+// The input message for RequestReading rpc
+message InputMessage {
+  int32 sensorId = 1;
+}
+
+// The output message for RequestReading rpc
+message OutputMessage {
+  double temperature = 1;
+  double pressure = 2;
+  double humidity = 3;
+  optional double co = 4;
+  optional double no2 = 5;
+  optional double so2 = 6;
+}

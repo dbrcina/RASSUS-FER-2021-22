@@ -38,8 +38,7 @@ public class RetrofitImplementation implements RestInterface {
                 System.exit(-1);
             }
             String location = response.headers().get("Location");
-            long id = Long.parseLong(location.substring(location.lastIndexOf("/") + 1));
-            return id;
+            return Long.parseLong(location.substring(location.lastIndexOf("/") + 1));
         } catch (IOException | NullPointerException e) {
             throw new RuntimeException(e);
         }
@@ -72,8 +71,7 @@ public class RetrofitImplementation implements RestInterface {
                 return 0;
             }
             String location = response.headers().get("Location");
-            long id = Long.parseLong(location.substring(location.lastIndexOf("/") + 1));
-            return id;
+            return Long.parseLong(location.substring(location.lastIndexOf("/") + 1));
         } catch (IOException | NullPointerException e) {
             throw new RuntimeException(e);
         }

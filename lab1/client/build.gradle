@@ -69,18 +69,3 @@ protobuf {
         }
     }
 }
-//################ GRPC ################
-task runExampleClient(type: JavaExec) {
-    group = "exec"
-    description = "Run client with JavaExecTask"
-    classpath = sourceSets.main.runtimeClasspath
-    mainClass = "hr.fer.tel.rassus.examples.SimpleUnaryRPCClient"
-    standardInput = System.in
-}
-
-task runExampleServer(type: JavaExec) {
-    group = "exec"
-    description = "Run client with JavaExecTask"
-    classpath = sourceSets.main.runtimeClasspath
-    mainClass = "hr.fer.tel.rassus.examples.SimpleUnaryRPCServer"
-}

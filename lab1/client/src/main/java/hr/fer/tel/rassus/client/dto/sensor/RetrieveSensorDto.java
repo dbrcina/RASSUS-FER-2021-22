@@ -50,9 +50,9 @@ public class RetrieveSensorDto {
 
     @Override
     public String toString() {
-        return "RetrieveSensorDto{" +
-                (id != null ? "id=" + id : "") +
-                ", latitude=" + latitude +
+        return "{" +
+                (id != null ? "id=" + id + ", " : "") +
+                "latitude=" + latitude +
                 ", longitude=" + longitude +
                 ", ip='" + ip + '\'' +
                 ", port=" + port +

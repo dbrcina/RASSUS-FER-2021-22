@@ -68,9 +68,9 @@ public class RetrieveReadingDto {
 
     @Override
     public String toString() {
-        return "RetrieveReadingDto{" +
-                (id != null ? "id=" + id : "") +
-                ", temperature=" + temperature +
+        return "{" +
+                (id != null ? "id=" + id + ", " : "") +
+                "temperature=" + temperature +
                 ", pressure=" + pressure +
                 ", humidity=" + humidity +
                 (co != null ? ", co=" + co : "") +
