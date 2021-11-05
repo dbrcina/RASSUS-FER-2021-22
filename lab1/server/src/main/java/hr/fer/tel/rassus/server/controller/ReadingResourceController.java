@@ -22,34 +22,34 @@ public class ReadingResourceController {
 
     @GetMapping("/{sensorId}")
     public ResponseEntity<?> retrieveReadings(@PathVariable("sensorId") long sensorId) {
-        Collection<RetrieveReadingDto> retrieveReadingDtos = service.retrieveReadings(sensorId);
-        if (retrieveReadingDtos == null) {
+        Collection<RetrieveReadingDto> readings = service.retrieveReadings(sensorId);
+        if (readings == null) {
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.ok(retrieveReadingDtos);
+        return ResponseEntity.ok(readings);
     }
 
     @GetMapping("/{sensorId}/{readingId}")
     public ResponseEntity<?> retrieveReading(@PathVariable("sensorId") long sensorId,
                                              @PathVariable("readingId") long readingId) {
-        RetrieveReadingDto retrieveReadingDto = service.retrieveReading(sensorId, readingId);
-        if (retrieveReadingDto == null) {
+        RetrieveReadingDto reading = service.retrieveReading(sensorId, readingId);
+        if (reading == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(retrieveReadingDto);
+        return ResponseEntity.ok(reading);
     }
 
     @PostMapping("/{sensorId}")
     public ResponseEntity<?> registerReading(@PathVariable("sensorId") long sensorId,
                                              @RequestBody RegisterReadingDto registerReadingDto) {
-        Long readingId = service.registerReading(sensorId, registerReadingDto);
-        if (readingId == null) {
+        Long id = service.registerReading(sensorId, registerReadingDto);
+        if (id == null) {
             return ResponseEntity.noContent().build();
         }
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{id}")
-                .buildAndExpand(readingId)
+                .buildAndExpand(id)
                 .toUri();
         return ResponseEntity.created(location).build();
     }

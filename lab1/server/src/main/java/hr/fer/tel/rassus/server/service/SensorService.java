@@ -27,14 +27,11 @@ public class SensorService {
     }
 
     public RetrieveSensorDto retrieveSensor(long id) {
-        Sensor sensor = retrieveSensorInternal(id);
-        if (sensor != null) {
-            return toRetrieveSensorDto(sensor, false);
-        }
-        return null;
+        return toRetrieveSensorDto(retrieveSensorInternal(id), false);
     }
 
-    protected Sensor retrieveSensorInternal(long id) {
+    // Package-private
+    Sensor retrieveSensorInternal(long id) {
         return repository.findById(id).orElse(null);
     }
 
@@ -62,7 +59,7 @@ public class SensorService {
                 }
             }
         }
-        return closestSensor != null ? toRetrieveSensorDto(closestSensor, false) : null;
+        return toRetrieveSensorDto(closestSensor, false);
     }
 
     public long registerSensor(RegisterSensorDto registerSensorDto) {
@@ -76,6 +73,7 @@ public class SensorService {
     }
 
     private RetrieveSensorDto toRetrieveSensorDto(Sensor sensor, boolean includeId) {
+        if (sensor == null) return null;
         return new RetrieveSensorDto(
                 includeId ? sensor.getId() : null,
                 sensor.getLatitude(),

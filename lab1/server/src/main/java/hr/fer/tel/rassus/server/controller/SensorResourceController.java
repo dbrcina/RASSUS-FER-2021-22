@@ -27,20 +27,20 @@ public class SensorResourceController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> retrieveSensor(@PathVariable("id") long id) {
-        RetrieveSensorDto retrieveSensorDto = service.retrieveSensor(id);
-        if (retrieveSensorDto == null) {
+        RetrieveSensorDto sensor = service.retrieveSensor(id);
+        if (sensor == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(retrieveSensorDto);
+        return ResponseEntity.ok(sensor);
     }
 
     @GetMapping("/closest/{id}")
     public ResponseEntity<?> retrieveClosestSensor(@PathVariable("id") long id) {
-        RetrieveSensorDto retrieveSensorDto = service.retrieveClosestSensor(id);
-        if (retrieveSensorDto == null) {
+        RetrieveSensorDto closestSensor = service.retrieveClosestSensor(id);
+        if (closestSensor == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(retrieveSensorDto);
+        return ResponseEntity.ok(closestSensor);
     }
 
     @PostMapping("")
