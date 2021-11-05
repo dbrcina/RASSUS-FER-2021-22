@@ -2,7 +2,6 @@ package hr.fer.tel.rassus.client.retrofit;
 
 import hr.fer.tel.rassus.client.RestInterface;
 import hr.fer.tel.rassus.client.dto.reading.RegisterReadingDto;
-import hr.fer.tel.rassus.client.dto.reading.RetrieveReadingDto;
 import hr.fer.tel.rassus.client.dto.sensor.RegisterSensorDto;
 import hr.fer.tel.rassus.client.dto.sensor.RetrieveSensorDto;
 import retrofit2.Response;
@@ -10,7 +9,6 @@ import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.logging.Logger;
 
 public class RetrofitImplementation implements RestInterface {
@@ -54,15 +52,6 @@ public class RetrofitImplementation implements RestInterface {
     }
 
     @Override
-    public Collection<RetrieveSensorDto> retrieveSensors() {
-        try {
-            return sensorApi.retrieveSensors().execute().body();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
     public long registerReading(long sensorId, RegisterReadingDto registerReadingDto) {
         try {
             Response<Void> response = readingApi.registerReading(sensorId, registerReadingDto).execute();
@@ -72,20 +61,6 @@ public class RetrofitImplementation implements RestInterface {
             }
             String location = response.headers().get("Location");
             return Long.parseLong(location.substring(location.lastIndexOf("/") + 1));
-        } catch (IOException | NullPointerException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public Collection<RetrieveReadingDto> retrieveReadings(long sensorId) {
-        try {
-            Response<Collection<RetrieveReadingDto>> response = readingApi.retrieveReadings(sensorId).execute();
-            if (response.code() == 204) {
-                LOGGER.severe("Response for retrieveReadings isn't successful! Returning null!");
-                return null;
-            }
-            return response.body();
         } catch (IOException | NullPointerException e) {
             throw new RuntimeException(e);
         }

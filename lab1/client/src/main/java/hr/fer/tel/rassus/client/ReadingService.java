@@ -3,34 +3,34 @@ package hr.fer.tel.rassus.client;
 import hr.fer.tel.rassus.client.dto.reading.RetrieveReadingDto;
 import io.grpc.stub.StreamObserver;
 
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 public class ReadingService extends ReadingGrpc.ReadingImplBase {
 
     private static final Logger LOGGER = Logger.getLogger(ReadingService.class.getName());
 
-    // Sensor id that returns reading.
-    private final long id;
-    // Reading that needs to be returned.
-    private RetrieveReadingDto retrieveReadingDto;
+    private final Supplier<RetrieveReadingDto> readingSupplier;
 
-    public ReadingService(long id) {
-        this.id = id;
-    }
-
-    public void setRetrieveReadingDto(RetrieveReadingDto retrieveReadingDto) {
-        this.retrieveReadingDto = retrieveReadingDto;
+    public ReadingService(Supplier<RetrieveReadingDto> readingSupplier) {
+        this.readingSupplier = readingSupplier;
     }
 
     @Override
     public void requestReading(InputMessage request, StreamObserver<OutputMessage> responseObserver) {
-        LOGGER.info(String.format("%d: Got a reading request from sensor %d!", id, request.getSensorId()));
+        LOGGER.info(String.format("Got a reading request from a sensor at port %d!", request.getSenderPort()));
 
-        // Build response
+        // Get reading.
+        RetrieveReadingDto retrieveReadingDto = readingSupplier.get();
+
+        // Build response.
         OutputMessage.Builder builder = OutputMessage.newBuilder();
         builder.setTemperature(retrieveReadingDto.getTemperature());
         builder.setPressure(retrieveReadingDto.getPressure());
         builder.setHumidity(retrieveReadingDto.getHumidity());
+        // Try-catch is necessary because gas reading can be null
+        // and auto unboxing will throw an exception if it is null.
+        // Exceptions are ignored because of optional type in .proto file.
         try {
             builder.setCo(retrieveReadingDto.getCo());
         } catch (NullPointerException ignored) {
@@ -44,10 +44,10 @@ public class ReadingService extends ReadingGrpc.ReadingImplBase {
         } catch (NullPointerException ignored) {
         }
 
-        // Send response
+        // Send response.
         responseObserver.onNext(builder.build());
 
-        LOGGER.info(String.format("%d: Responding to sensor %d!", id, request.getSensorId()));
+        LOGGER.info(String.format("Responding to a sensor at port %d!", request.getSenderPort()));
         responseObserver.onCompleted();
     }
 

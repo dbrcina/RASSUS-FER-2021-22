@@ -13,7 +13,7 @@ service Reading {
 
 // The input message for RequestReading rpc
 message InputMessage {
-  int32 sensorId = 1;
+  int32 senderPort = 1;
 }
 
 // The output message for RequestReading rpc

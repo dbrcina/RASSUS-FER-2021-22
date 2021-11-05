@@ -11,9 +11,9 @@ public class SimpleUnaryRPCServer {
 
     private static final Logger LOGGER = Logger.getLogger(SimpleUnaryRPCServer.class.getName());
 
-    private Server server;
     private final ReadingService service;
     private final int port;
+    private Server server;
 
     public SimpleUnaryRPCServer(ReadingService service, int port) {
         this.service = service;
@@ -21,43 +21,31 @@ public class SimpleUnaryRPCServer {
     }
 
     public void start() throws IOException {
-        // Register the service
+        // Register the service.
         server = ServerBuilder
                 .forPort(port)
                 .addService(service)
                 .build()
                 .start();
 
-        LOGGER.info("Server started on " + port);
+        LOGGER.info(String.format("Server started on port %d!", port));
 
-        //  Clean shutdown of server in case of JVM shutdown
+        //  Clean shutdown of server in case of JVM shutdown.
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.err.println("Shutting down gRPC server since JVM is shutting down");
+            System.err.println("Shutting down gRPC server since JVM is shutting down!");
             try {
-                SimpleUnaryRPCServer.this.stop();
+                stop();
             } catch (InterruptedException e) {
-                e.printStackTrace(System.err);
+                e.printStackTrace();
             }
-            System.err.println("Server shut down");
+            System.err.println("Server shut down!");
         }));
     }
 
     public void stop() throws InterruptedException {
         if (server != null) {
-            server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
+            server.shutdown().awaitTermination(10, TimeUnit.SECONDS);
         }
-    }
-
-    public void blockUntilShutdown() throws InterruptedException {
-        if (server != null) {
-            server.awaitTermination();
-        }
-    }
-
-    public static void main(String[] args) throws IOException, InterruptedException {
-        final SimpleUnaryRPCServer server = new SimpleUnaryRPCServer(new ReadingService(1), 3000);
-        server.start();
-        server.blockUntilShutdown();
     }
 
 }

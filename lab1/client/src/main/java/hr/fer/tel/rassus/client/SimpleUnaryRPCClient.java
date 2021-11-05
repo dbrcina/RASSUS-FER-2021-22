@@ -1,5 +1,6 @@
 package hr.fer.tel.rassus.client;
 
+import hr.fer.tel.rassus.client.dto.reading.RetrieveReadingDto;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
@@ -11,10 +12,14 @@ public class SimpleUnaryRPCClient {
 
     private static final Logger LOGGER = Logger.getLogger(SimpleUnaryRPCClient.class.getName());
 
+    private final int myPort;
+    private final int port;
     private final ManagedChannel channel;
     private final ReadingGrpc.ReadingBlockingStub readingBlockingStub;
 
-    public SimpleUnaryRPCClient(String host, int port) {
+    public SimpleUnaryRPCClient(int myPort, String host, int port) {
+        this.myPort = myPort;
+        this.port = port;
         channel = ManagedChannelBuilder
                 .forAddress(host, port)
                 .usePlaintext()
@@ -29,25 +34,31 @@ public class SimpleUnaryRPCClient {
         channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
     }
 
-    public void requestReading() {
+    public RetrieveReadingDto requestReading() {
         InputMessage request = InputMessage.newBuilder()
-                .setSensorId(2)
+                .setSenderPort(myPort)
                 .build();
 
-        LOGGER.info(String.format("%d: Request reading from sensor %d!", 2, 1));
+        LOGGER.info(String.format("Request reading from a sensor at port %d!", port));
 
         try {
             OutputMessage response = readingBlockingStub.requestReading(request);
-            LOGGER.info(String.format("%d: Received reading from sensor %d!", 2, 1));
+            RetrieveReadingDto reading = new RetrieveReadingDto();
+            reading.setTemperature(response.getTemperature());
+            reading.setPressure(response.getPressure());
+            reading.setHumidity(response.getHumidity());
+            // RPC will return 0 if an optional parameter was not provided.
+            // It uses default value for double which is 0...
+            // This is not a great design, but it works for this project.
+            reading.setCo(response.getCo() == 0 ? null : response.getCo());
+            reading.setNo2(response.getNo2() == 0 ? null : response.getNo2());
+            reading.setSo2(response.getSo2() == 0 ? null : response.getSo2());
+            LOGGER.info(String.format("Received reading from a sensor at port %d %s!", port, reading));
+            return reading;
         } catch (StatusRuntimeException e) {
-            LOGGER.severe(String.format("%d: RPC to sensor %d failed: %s!", 2, 1, e.getMessage()));
+            LOGGER.severe(String.format("RPC to a sensor at port %d failed: %s!", port, e.getMessage()));
+            return null;
         }
-    }
-
-    public static void main(String[] args) throws InterruptedException {
-        SimpleUnaryRPCClient client = new SimpleUnaryRPCClient("127.0.0.1", 3000);
-        client.requestReading();
-        client.stop();
     }
 
 }

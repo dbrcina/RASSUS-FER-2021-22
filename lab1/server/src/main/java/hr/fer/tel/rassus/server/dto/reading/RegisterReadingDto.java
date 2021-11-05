@@ -2,45 +2,59 @@ package hr.fer.tel.rassus.server.dto.reading;
 
 public class RegisterReadingDto {
 
-    private final double temperature;
-    private final double pressure;
-    private final double humidity;
-    private final Double co;
-    private final Double no2;
-    private final Double so2;
-
-    public RegisterReadingDto(
-            double temperature, double pressure, double humidity, Double co, Double no2, Double so2) {
-        this.temperature = temperature;
-        this.pressure = pressure;
-        this.humidity = humidity;
-        this.co = co;
-        this.no2 = no2;
-        this.so2 = so2;
-    }
+    private double temperature;
+    private double pressure;
+    private double humidity;
+    private Double co;
+    private Double no2;
+    private Double so2;
 
     public double getTemperature() {
         return temperature;
+    }
+
+    public void setTemperature(double temperature) {
+        this.temperature = temperature;
     }
 
     public double getPressure() {
         return pressure;
     }
 
+    public void setPressure(double pressure) {
+        this.pressure = pressure;
+    }
+
     public double getHumidity() {
         return humidity;
+    }
+
+    public void setHumidity(double humidity) {
+        this.humidity = humidity;
     }
 
     public Double getCo() {
         return co;
     }
 
+    public void setCo(Double co) {
+        this.co = co;
+    }
+
     public Double getNo2() {
         return no2;
     }
 
+    public void setNo2(Double no2) {
+        this.no2 = no2;
+    }
+
     public Double getSo2() {
         return so2;
+    }
+
+    public void setSo2(Double so2) {
+        this.so2 = so2;
     }
 
 }

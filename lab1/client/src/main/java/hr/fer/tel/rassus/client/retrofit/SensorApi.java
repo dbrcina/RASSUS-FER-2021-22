@@ -8,8 +8,6 @@ import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
 
-import java.util.Collection;
-
 public interface SensorApi {
 
     @POST("/sensors")
@@ -17,8 +15,5 @@ public interface SensorApi {
 
     @GET("/sensors/closest/{id}")
     Call<RetrieveSensorDto> retrieveClosestSensor(@Path("id") long id);
-
-    @GET("/sensors")
-    Call<Collection<RetrieveSensorDto>> retrieveSensors();
 
 }
