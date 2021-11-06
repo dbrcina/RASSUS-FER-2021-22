@@ -27,7 +27,6 @@ public class SensorClient {
     private static final double LATITUDE_LB = 45.75;
     private static final double LATITUDE_UB = 45.8501;
 
-    private final ThreadLocalRandom random;
     private final long id;
     private final int port;
     private final RestInterface rest;
@@ -37,7 +36,7 @@ public class SensorClient {
 
     // Creates a new sensor, registers it and prepares readings.
     public SensorClient(String ip, int port, RestInterface rest) throws IOException {
-        random = ThreadLocalRandom.current();
+        ThreadLocalRandom random = ThreadLocalRandom.current();
         double latitude = random.nextDouble(LATITUDE_LB, LATITUDE_UB);
         double longitude = random.nextDouble(LONGITUDE_LB, LONGITUDE_UB);
         this.port = port;
@@ -72,8 +71,6 @@ public class SensorClient {
         // gRPC server will be stopped when the program exists. See the implemention...
         new SimpleUnaryRPCServer(new ReadingService(readingSupplier), port).start();
         while (true) {
-            // Sleep for simulation purpose.
-            Thread.sleep(random.nextLong(500, 3_000));
             RetrieveReadingDto reading = readingSupplier.get();
             LOGGER.info(String.format("New reading %s!", reading));
             RetrieveSensorDto closestSensor = rest.retrieveClosestSensor(id);
@@ -129,13 +126,13 @@ public class SensorClient {
 
     // Program expects port as a command line argument.
     public static void main(String[] args) throws IOException, InterruptedException {
-        // Sleep for simulation purpose.
-        Thread.sleep(3_000);
-        new SensorClient(
+        SensorClient client = new SensorClient(
                 "127.0.0.1",
                 Integer.parseInt(args[0]),
-                new RetrofitImplementation("http://localhost:8090")
-        ).start();
+                new RetrofitImplementation("http://localhost:8090"));
+        // Sleep for simulation purpose.
+        Thread.sleep(5_000);
+        client.start();
     }
 
 }
