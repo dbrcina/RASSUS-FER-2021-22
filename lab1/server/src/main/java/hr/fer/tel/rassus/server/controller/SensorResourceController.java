@@ -34,6 +34,7 @@ public class SensorResourceController {
         return ResponseEntity.ok(sensor);
     }
 
+    // TODO: This should be under url /sensors/{id}/closest.
     @GetMapping("/closest/{id}")
     public ResponseEntity<?> retrieveClosestSensor(@PathVariable("id") long id) {
         RetrieveSensorDto closestSensor = service.retrieveClosestSensor(id);

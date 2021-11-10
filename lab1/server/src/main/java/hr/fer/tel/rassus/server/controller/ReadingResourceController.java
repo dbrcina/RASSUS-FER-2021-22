@@ -20,6 +20,7 @@ public class ReadingResourceController {
         this.service = readingService;
     }
 
+    // TODO: This should be in the sensor controller under url /sensors/{id}/readings.
     @GetMapping("/{sensorId}")
     public ResponseEntity<?> retrieveReadings(@PathVariable("sensorId") long sensorId) {
         Collection<RetrieveReadingDto> readings = service.retrieveReadings(sensorId);
@@ -29,6 +30,7 @@ public class ReadingResourceController {
         return ResponseEntity.ok(readings);
     }
 
+    // TODO: This should be under url /readings/{id} and it should return sensorId in response.
     @GetMapping("/{sensorId}/{readingId}")
     public ResponseEntity<?> retrieveReading(@PathVariable("sensorId") long sensorId,
                                              @PathVariable("readingId") long readingId) {
@@ -39,6 +41,7 @@ public class ReadingResourceController {
         return ResponseEntity.ok(reading);
     }
 
+    // TODO: This should be in the sensor controller under url /sensors/{id}/readings
     @PostMapping("/{sensorId}")
     public ResponseEntity<?> registerReading(@PathVariable("sensorId") long sensorId,
                                              @RequestBody RegisterReadingDto registerReadingDto) {
