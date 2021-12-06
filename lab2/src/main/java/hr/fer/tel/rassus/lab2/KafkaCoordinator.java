@@ -1,4 +1,4 @@
-package hr.fer.tel.rassus.lab2.coordinator;
+package hr.fer.tel.rassus.lab2;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
