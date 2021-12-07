@@ -7,7 +7,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import java.util.Properties;
 import java.util.Scanner;
 
-public class KafkaCoordinator {
+public final class KafkaCoordinator {
 
     public static void main(String[] args) {
         Properties props = new Properties();
