@@ -2,6 +2,8 @@ package hr.fer.tel.rassus.lab2;
 
 import com.google.gson.Gson;
 
+import java.util.Objects;
+
 public final class Sensor {
 
     private static final Gson gson = new Gson();
@@ -38,6 +40,18 @@ public final class Sensor {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Sensor sensor)) return false;
+        return id == sensor.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 
     public static String toJson(Sensor sensor) {
