@@ -24,9 +24,7 @@ public final class UDPServer {
     public void loop() {
         if (socket == null) {
             try {
-                logger.info("Starting server on port %d...".formatted(port));
                 socket = new SimpleSimulatedDatagramSocket(port, 0.3, 1000);
-                logger.info("Server started!");
             } catch (SocketException e) {
                 logger.severe("Server socket creation: " + e.getMessage());
                 System.exit(-1);
@@ -42,14 +40,13 @@ public final class UDPServer {
                 logger.severe("receive(): " + e.getMessage());
                 break;
             }
-            System.out.println("Received: " + new String(rcvPacket.getData(), rcvPacket.getOffset(),
-                    rcvPacket.getLength()));
             DatagramPacket sendPacket = new DatagramPacket(
                     sendBuf, sendBuf.length, rcvPacket.getAddress(), rcvPacket.getPort());
             try {
                 socket.send(sendPacket);
             } catch (Exception e) {
                 logger.severe("send(): " + e.getMessage());
+                break;
             }
         }
     }
@@ -58,7 +55,6 @@ public final class UDPServer {
         if (socket != null) {
             socket.close();
             socket = null;
-            logger.info("Server closed!");
         }
     }
 

@@ -3,9 +3,12 @@ package hr.fer.tel.rassus.lab2;
 import java.io.IOException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 public final class UDPClient {
+
+    private static final int MAX_UNCONFIRMED = 50;
 
     private static final Logger logger = Logger.getLogger(UDPClient.class.getName());
 
@@ -19,14 +22,12 @@ public final class UDPClient {
     }
 
     public void send() {
-        if (socket == null) {
+        if (socket == null || socket.isClosed()) {
             try {
-                logger.info("Opening connection towards server at port %d...".formatted(port));
                 socket = new SimpleSimulatedDatagramSocket(0.3, 1000);
-                logger.info("Connection opened!");
             } catch (SocketException e) {
                 logger.severe("Client socket creation: " + e.getMessage());
-                System.exit(-1);
+                return;
             }
         }
         byte[] sendBuf = "Hello, World!".getBytes(StandardCharsets.UTF_8);
@@ -35,23 +36,27 @@ public final class UDPClient {
             socket.send(sendPacket);
         } catch (Exception e) {
             logger.severe("send() outside: " + e.getMessage());
+            return;
         }
         // Receive ACK packet
+        byte[] ackBytes = "ACK".getBytes(StandardCharsets.UTF_8);
+        byte[] rcvBuf = new byte[ackBytes.length];
         int counter = 1;
-        byte[] rcvBuf = new byte[256];
         while (counter > 0) {
+            logger.info("Unconfirmed: %d".formatted(counter));
+            if (counter >= MAX_UNCONFIRMED) break;
             DatagramPacket ackPacket = new DatagramPacket(rcvBuf, rcvBuf.length);
             try {
                 socket.receive(ackPacket);
-                System.out.printf("Received %s%n", new String(ackPacket.getData(), ackPacket.getOffset(),
-                        ackPacket.getLength()));
-                counter--;
+                if (Arrays.equals(ackPacket.getData(), ackBytes)) counter--;
             } catch (SocketTimeoutException e) {
                 // Retransmission
                 try {
                     socket.send(sendPacket);
+                    counter++;
                 } catch (Exception ex) {
                     logger.severe("send() inside: " + ex.getMessage());
+                    break;
                 }
             } catch (IOException e) {
                 logger.severe("receive(): " + e.getMessage());
@@ -64,7 +69,6 @@ public final class UDPClient {
         if (socket != null) {
             socket.close();
             socket = null;
-            logger.info("Connection closed!");
         }
     }
 
