@@ -1,4 +1,4 @@
-package hr.fer.tel.rassus.stupidudp.network;
+package hr.fer.tel.rassus.lab2;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -67,7 +67,7 @@ public class SimpleSimulatedDatagramSocket extends DatagramSocket {
             } catch (InterruptedException e) {
                 Thread.interrupted();
             } catch (IOException ex) {
-                Logger.getLogger(SimulatedDatagramSocket.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(SimpleSimulatedDatagramSocket.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }

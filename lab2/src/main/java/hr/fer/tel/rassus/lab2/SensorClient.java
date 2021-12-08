@@ -1,6 +1,5 @@
 package hr.fer.tel.rassus.lab2;
 
-import hr.fer.tel.rassus.stupidudp.network.EmulatedSystemClock;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -27,7 +26,10 @@ public final class SensorClient {
     private final List<Double> readings;
     private final Supplier<Double> readingSupplier;
     private final Set<Sensor> peerNetwork;
-    private AtomicBoolean running;
+    private final AtomicBoolean running;
+    private final UDPServer server;
+
+    private boolean startMsgReceived;
 
     public SensorClient(int id, String address, int port) throws IOException {
         sensor = new Sensor(id, address, port);
@@ -41,6 +43,8 @@ public final class SensorClient {
             return readings.get((int) (secondsPassed % readings.size()) + 1);
         };
         peerNetwork = new HashSet<>();
+        running = new AtomicBoolean();
+        server = new UDPServer(port, running);
     }
 
     private void prepareReadings() throws IOException {
@@ -83,7 +87,7 @@ public final class SensorClient {
             do {
                 for (ConsumerRecord<String, String> record : consumer.poll(pollTimeout)) {
                     handleRecord(record);
-                    exit = running != null && !running.get();
+                    exit = startMsgReceived && !running.get();
                     if (exit) break;
                 }
                 consumer.commitAsync();
@@ -92,6 +96,7 @@ public final class SensorClient {
             consumer.unsubscribe();
             consumer.close();
             producer.close();
+            server.close();
         }
     }
 
@@ -106,14 +111,12 @@ public final class SensorClient {
     }
 
     private void handleTopicCommand(String command) {
-        if (running == null) {
-            running = new AtomicBoolean();
-        }
         command = command.toLowerCase();
         if (command.equals("start")) {
             if (!running.get()) {
+                startMsgReceived = true;
                 running.set(true);
-                // Start UDP server here.
+                new Thread(server::loop).start();
                 producer.send(new ProducerRecord<>("Register", Sensor.toJson(sensor)));
             }
         } else if (command.equals("stop")) {
@@ -124,14 +127,14 @@ public final class SensorClient {
     }
 
     private void handleTopicRegister(String json) {
-        if (running == null || !running.get()) return;
+        if (!startMsgReceived) return;
         Sensor otherSensor = Sensor.fromJson(json);
         if (!otherSensor.equals(sensor)) {
             peerNetwork.add(otherSensor);
         }
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         Scanner sc = null;
         int id, port;
         String address = "localhost";
