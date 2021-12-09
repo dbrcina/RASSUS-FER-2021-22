@@ -1,12 +1,13 @@
 package hr.fer.tel.rassus.lab2;
 
+import hr.fer.tel.rassus.lab2.utils.KafkaConfig;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
 import java.util.Scanner;
 
-public final class KafkaCoordinator {
+public final class NodeCoordinator {
 
     public static void main(String[] args) {
         try (Producer<String, String> producer = new KafkaProducer<>(KafkaConfig.producerProps());

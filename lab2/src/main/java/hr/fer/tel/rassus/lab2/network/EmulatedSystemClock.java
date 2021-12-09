@@ -5,7 +5,7 @@
  */
 
 
-package hr.fer.tel.rassus.lab2;
+package hr.fer.tel.rassus.lab2.network;
 
 import java.util.Random;
 

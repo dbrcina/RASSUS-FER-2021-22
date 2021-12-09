@@ -1,10 +1,10 @@
-package hr.fer.tel.rassus.lab2;
+package hr.fer.tel.rassus.lab2.node.model;
 
 import com.google.gson.Gson;
 
 import java.util.Objects;
 
-public final class Sensor {
+public final class NodeModel {
 
     private static final Gson gson = new Gson();
 
@@ -12,7 +12,7 @@ public final class Sensor {
     private String address;
     private int port;
 
-    public Sensor(int id, String address, int port) {
+    public NodeModel(int id, String address, int port) {
         this.id = id;
         this.address = address;
         this.port = port;
@@ -45,7 +45,7 @@ public final class Sensor {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Sensor sensor)) return false;
+        if (!(o instanceof NodeModel sensor)) return false;
         return id == sensor.id;
     }
 
@@ -54,12 +54,12 @@ public final class Sensor {
         return Objects.hash(id);
     }
 
-    public static String toJson(Sensor sensor) {
+    public static String toJson(NodeModel sensor) {
         return gson.toJson(sensor);
     }
 
-    public static Sensor fromJson(String json) {
-        return gson.fromJson(json, Sensor.class);
+    public static NodeModel fromJson(String json) {
+        return gson.fromJson(json, NodeModel.class);
     }
 
 }
