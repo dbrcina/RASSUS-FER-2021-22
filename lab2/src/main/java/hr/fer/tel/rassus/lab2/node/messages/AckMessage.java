@@ -1,7 +1,8 @@
-package hr.fer.tel.rassus.lab2.node.communication.messages;
+package hr.fer.tel.rassus.lab2.node.messages;
 
 import java.net.DatagramPacket;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 public final class AckMessage {
 
@@ -15,12 +16,12 @@ public final class AckMessage {
         ackPacket = new DatagramPacket(ackBuf, ackBuf.length);
     }
 
-    public byte[] getAckBuf() {
-        return ackBuf;
-    }
-
     public DatagramPacket getAckPacket() {
         return ackPacket;
+    }
+
+    public boolean isEqual(byte[] ackBuf) {
+        return Arrays.equals(this.ackBuf, ackBuf);
     }
 
     public static AckMessage getInstance() {

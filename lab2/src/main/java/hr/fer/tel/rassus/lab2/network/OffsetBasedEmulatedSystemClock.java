@@ -1,20 +1,20 @@
 package hr.fer.tel.rassus.lab2.network;
 
-import java.util.function.Supplier;
+import java.util.concurrent.atomic.AtomicLong;
 
 public final class OffsetBasedEmulatedSystemClock extends EmulatedSystemClock {
 
     private final EmulatedSystemClock clock;
-    private final Supplier<Long> offsetSupplier;
+    private final AtomicLong offset;
 
-    public OffsetBasedEmulatedSystemClock(EmulatedSystemClock clock, Supplier<Long> offsetSupplier) {
+    public OffsetBasedEmulatedSystemClock(EmulatedSystemClock clock, AtomicLong offset) {
         this.clock = clock;
-        this.offsetSupplier = offsetSupplier;
+        this.offset = offset;
     }
 
     @Override
     public long currentTimeMillis() {
-        return clock.currentTimeMillis() + offsetSupplier.get();
+        return clock.currentTimeMillis() + offset.get();
     }
 
 }
