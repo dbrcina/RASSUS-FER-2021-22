@@ -1,4 +1,4 @@
-package hr.fer.tel.rassus.lab2.utils;
+package hr.fer.tel.rassus.lab2.util;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;

@@ -1,7 +1,8 @@
 package hr.fer.tel.rassus.lab2.node.worker;
 
 import hr.fer.tel.rassus.lab2.network.EmulatedSystemClock;
-import hr.fer.tel.rassus.lab2.node.messages.DataMessage;
+import hr.fer.tel.rassus.lab2.node.message.DataMessage;
+import hr.fer.tel.rassus.lab2.node.message.SocketMessage;
 import hr.fer.tel.rassus.lab2.node.model.NodeModel;
 
 import java.io.BufferedReader;
@@ -24,24 +25,24 @@ public final class UsefulWorker implements Runnable {
 
     private static final Logger logger = Logger.getLogger(UsefulWorker.class.getName());
 
+    private final int nodeId;
     private final EmulatedSystemClock clock;
     private final AtomicBoolean running;
     private final Collection<NodeModel> peerNetwork;
     private final BlockingQueue<DatagramPacket> sendQueue;
-    private final int id;
     private final List<Double> readings;
 
     public UsefulWorker(
+            int nodeId,
             EmulatedSystemClock clock,
             AtomicBoolean running,
             Collection<NodeModel> peerNetwork,
-            BlockingQueue<DatagramPacket> sendQueue,
-            int id) {
+            BlockingQueue<DatagramPacket> sendQueue) {
+        this.nodeId = nodeId;
         this.clock = clock;
         this.running = running;
         this.peerNetwork = peerNetwork;
         this.sendQueue = sendQueue;
-        this.id = id;
         readings = new ArrayList<>(100);
         try (InputStream is = UsefulWorker.class.getClassLoader().getResourceAsStream("readings.csv");
              BufferedReader br = new BufferedReader(new InputStreamReader(Objects.requireNonNull(is)))) {
@@ -67,20 +68,21 @@ public final class UsefulWorker implements Runnable {
 
     @Override
     public void run() {
-        try {
-            while (running.get()) {
-                double reading = generateReading();
-                DataMessage dataMessage = new DataMessage(id, reading);
-                for (NodeModel peer : peerNetwork) {
-                    byte[] sendBuf = DataMessage.serialize(dataMessage);
+        while (running.get()) {
+            double reading = generateReading();
+            SocketMessage dataMessage = new DataMessage(nodeId, reading);
+            for (NodeModel peer : peerNetwork) {
+                try {
+                    byte[] sendBuf = SocketMessage.serialize(dataMessage);
                     InetAddress address = InetAddress.getByName(peer.getAddress());
                     int port = peer.getPort();
                     DatagramPacket sendPacket = new DatagramPacket(sendBuf, sendBuf.length, address, port);
                     sendQueue.put(sendPacket);
+                } catch (IOException | InterruptedException e) {
+                    logger.log(Level.SEVERE, "", e);
+                    break;
                 }
             }
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "", e);
         }
     }
 

@@ -1,6 +1,6 @@
 package hr.fer.tel.rassus.lab2;
 
-import hr.fer.tel.rassus.lab2.utils.KafkaConfig;
+import hr.fer.tel.rassus.lab2.util.KafkaConfig;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;

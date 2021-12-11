@@ -3,6 +3,7 @@ package hr.fer.tel.rassus.lab2.node;
 import hr.fer.tel.rassus.lab2.network.EmulatedSystemClock;
 import hr.fer.tel.rassus.lab2.network.OffsetBasedEmulatedSystemClock;
 import hr.fer.tel.rassus.lab2.network.SimpleSimulatedDatagramSocket;
+import hr.fer.tel.rassus.lab2.node.message.AckMessage;
 import hr.fer.tel.rassus.lab2.node.model.NodeModel;
 import hr.fer.tel.rassus.lab2.node.worker.ReceiveWorker;
 import hr.fer.tel.rassus.lab2.node.worker.SendWorker;
@@ -22,13 +23,15 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static hr.fer.tel.rassus.lab2.utils.KafkaConfig.consumerProps;
-import static hr.fer.tel.rassus.lab2.utils.KafkaConfig.producerProps;
+import static hr.fer.tel.rassus.lab2.util.KafkaConfig.consumerProps;
+import static hr.fer.tel.rassus.lab2.util.KafkaConfig.producerProps;
 
 public final class Node {
 
@@ -42,6 +45,7 @@ public final class Node {
     private final AtomicBoolean running;
     private final Collection<NodeModel> peerNetwork;
     private final BlockingQueue<DatagramPacket> sendQueue;
+    private final Queue<AckMessage> ackRcvQueue;
 
     public Node(int id, String host, int port) {
         model = new NodeModel(id, host, port);
@@ -50,6 +54,7 @@ public final class Node {
         running = new AtomicBoolean();
         peerNetwork = new HashSet<>();
         sendQueue = new LinkedBlockingQueue<>();
+        ackRcvQueue = new ConcurrentLinkedQueue<>();
     }
 
     // This will work only when messages are ordered in the next order:
@@ -62,9 +67,9 @@ public final class Node {
             handleStart(consumer);
             producer.send(new ProducerRecord<>("Register", NodeModel.toJson(model)));
             registrationProcessing(consumer);
-            new Thread(new UsefulWorker(clock, running, peerNetwork, sendQueue, model.getId())).start();
-            new Thread(new ReceiveWorker(socket, running)).start();
-            new Thread(new SendWorker(socket, running, sendQueue)).start();
+            new Thread(new UsefulWorker(model.getId(), clock, running, peerNetwork, sendQueue)).start();
+            new Thread(new ReceiveWorker(model.getId(), socket, running, ackRcvQueue)).start();
+            new Thread(new SendWorker(socket, running, sendQueue, ackRcvQueue)).start();
             handleStop(consumer);
         } catch (SocketException e) {
             e.printStackTrace();
