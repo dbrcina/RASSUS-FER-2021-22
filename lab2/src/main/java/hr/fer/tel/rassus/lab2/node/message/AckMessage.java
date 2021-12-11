@@ -2,16 +2,20 @@ package hr.fer.tel.rassus.lab2.node.message;
 
 import java.io.Serial;
 
-public final class AckMessage extends SocketMessage {
+public class AckMessage extends SocketMessage {
 
     @Serial
     private static final long serialVersionUID = 1337962199126122096L;
 
-    private final int ackMessageId;
+    private final int messageIdToBeAck;
 
-    public AckMessage(int senderId, int ackMessageId) {
+    public AckMessage(int senderId, int messageIdToBeAck) {
         super(senderId, Type.ACK);
-        this.ackMessageId = ackMessageId;
+        this.messageIdToBeAck = messageIdToBeAck;
+    }
+
+    public int getMessageIdToBeAck() {
+        return messageIdToBeAck;
     }
 
 }

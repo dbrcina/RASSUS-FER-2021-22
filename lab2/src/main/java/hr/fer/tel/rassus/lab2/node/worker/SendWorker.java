@@ -1,40 +1,37 @@
 package hr.fer.tel.rassus.lab2.node.worker;
 
-import hr.fer.tel.rassus.lab2.node.message.AckMessage;
-import hr.fer.tel.rassus.lab2.node.message.DataMessage;
+import hr.fer.tel.rassus.lab2.config.Configurations;
 import hr.fer.tel.rassus.lab2.node.message.SocketMessage;
+import hr.fer.tel.rassus.lab2.util.Pair;
 import hr.fer.tel.rassus.lab2.util.Utils;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public final class SendWorker implements Runnable {
+public class SendWorker implements Runnable {
 
     private static final Logger logger = Logger.getLogger(SendWorker.class.getName());
 
     private final DatagramSocket socket;
     private final AtomicBoolean running;
     private final BlockingQueue<DatagramPacket> sendQueue;
-    private final Queue<AckMessage> ackRcvQueue;
-    private final Map<Integer, DatagramPacket> unAckPacketsMap;
+    private final Map<Integer, Pair<DatagramPacket, Long>> unAckPackets;
 
     public SendWorker(
             DatagramSocket socket,
             AtomicBoolean running,
             BlockingQueue<DatagramPacket> sendQueue,
-            Queue<AckMessage> ackRcvQueue) {
+            Map<Integer, Pair<DatagramPacket, Long>> unAckPackets) {
         this.socket = socket;
         this.running = running;
         this.sendQueue = sendQueue;
-        this.ackRcvQueue = ackRcvQueue;
-        unAckPacketsMap = new HashMap<>();
+        this.unAckPackets = unAckPackets;
     }
 
     @Override
@@ -45,12 +42,29 @@ public final class SendWorker implements Runnable {
                 if (sendPacket != null) {
                     SocketMessage m = SocketMessage.deserialize(Utils.dataFromDatagramPacket(sendPacket));
                     switch (m.getType()) {
-                        case DATA -> unAckPacketsMap.put()
+                        case DATA -> {
+                            unAckPackets.put(m.getMessageId(), new Pair<>(sendPacket, System.currentTimeMillis()));
+                            socket.send(sendPacket);
+                        }
+                        case ACK -> socket.send(sendPacket);
+                        default -> throw new IllegalArgumentException(
+                                "'%s' is invalid SocketMessage type!".formatted(m.getType()));
                     }
-                    socket.send(sendPacket);
+                }
+                // Retransmission
+                for (Map.Entry<Integer, Pair<DatagramPacket, Long>> entry : unAckPackets.entrySet()) {
+                    Pair<DatagramPacket, Long> pair = entry.getValue();
+                    long currentTime = System.currentTimeMillis();
+                    long sentTime = pair.getV2();
+                    // 4 * avg delay...see implementation of SimpleSimulatedDatagramSocket
+                    if ((currentTime - sentTime) > 4 * Configurations.AVERAGE_DELAY) {
+                        socket.send(pair.getV1());
+                        pair.setV2(currentTime);
+                    }
                 }
             } catch (Exception e) {
-                logger.severe(e.getMessage());
+                logger.log(Level.SEVERE, "", e);
+                break;
             }
         }
     }

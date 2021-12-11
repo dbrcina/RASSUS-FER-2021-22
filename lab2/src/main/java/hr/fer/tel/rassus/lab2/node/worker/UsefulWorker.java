@@ -4,6 +4,7 @@ import hr.fer.tel.rassus.lab2.network.EmulatedSystemClock;
 import hr.fer.tel.rassus.lab2.node.message.DataMessage;
 import hr.fer.tel.rassus.lab2.node.message.SocketMessage;
 import hr.fer.tel.rassus.lab2.node.model.NodeModel;
+import hr.fer.tel.rassus.lab2.util.Utils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public final class UsefulWorker implements Runnable {
+public class UsefulWorker implements Runnable {
 
     private static final Logger logger = Logger.getLogger(UsefulWorker.class.getName());
 
@@ -63,25 +64,21 @@ public final class UsefulWorker implements Runnable {
 
     public double generateReading() {
         long secondsPassed = TimeUnit.MILLISECONDS.toSeconds(clock.currentTimeMillis());
-        return readings.get((int) (secondsPassed % readings.size()) + 1);
+        return readings.get((int) (secondsPassed % readings.size()));
     }
 
     @Override
     public void run() {
         while (running.get()) {
-            double reading = generateReading();
-            SocketMessage dataMessage = new DataMessage(nodeId, reading);
-            for (NodeModel peer : peerNetwork) {
-                try {
-                    byte[] sendBuf = SocketMessage.serialize(dataMessage);
-                    InetAddress address = InetAddress.getByName(peer.getAddress());
-                    int port = peer.getPort();
-                    DatagramPacket sendPacket = new DatagramPacket(sendBuf, sendBuf.length, address, port);
-                    sendQueue.put(sendPacket);
-                } catch (IOException | InterruptedException e) {
-                    logger.log(Level.SEVERE, "", e);
-                    break;
+            try {
+                double reading = generateReading();
+                for (NodeModel peer : peerNetwork) {
+                    SocketMessage m = new DataMessage(nodeId, reading);
+                    sendQueue.put(Utils.createSendPacket(m, InetAddress.getByName(peer.getAddress()), peer.getPort()));
                 }
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "", e);
+                break;
             }
         }
     }

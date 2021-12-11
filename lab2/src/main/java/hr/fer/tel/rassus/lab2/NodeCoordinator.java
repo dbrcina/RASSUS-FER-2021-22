@@ -1,16 +1,16 @@
 package hr.fer.tel.rassus.lab2;
 
-import hr.fer.tel.rassus.lab2.util.KafkaConfig;
+import hr.fer.tel.rassus.lab2.config.Configurations;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
 import java.util.Scanner;
 
-public final class NodeCoordinator {
+public class NodeCoordinator {
 
     public static void main(String[] args) {
-        try (Producer<String, String> producer = new KafkaProducer<>(KafkaConfig.producerProps());
+        try (Producer<String, String> producer = new KafkaProducer<>(Configurations.producerProps());
              Scanner sc = new Scanner(System.in)) {
 
             System.out.print("Press ANY KEY to Start: ");

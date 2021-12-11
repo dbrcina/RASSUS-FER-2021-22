@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 
 import java.util.Objects;
 
-public final class NodeModel {
+public class NodeModel {
 
     private static final Gson gson = new Gson();
 
@@ -45,8 +45,8 @@ public final class NodeModel {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof NodeModel sensor)) return false;
-        return id == sensor.id;
+        if (!(o instanceof NodeModel otherModel)) return false;
+        return id == otherModel.id;
     }
 
     @Override
@@ -54,8 +54,8 @@ public final class NodeModel {
         return Objects.hash(id);
     }
 
-    public static String toJson(NodeModel sensor) {
-        return gson.toJson(sensor);
+    public static String toJson(NodeModel model) {
+        return gson.toJson(model);
     }
 
     public static NodeModel fromJson(String json) {

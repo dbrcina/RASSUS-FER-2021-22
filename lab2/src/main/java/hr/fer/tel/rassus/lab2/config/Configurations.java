@@ -1,13 +1,18 @@
-package hr.fer.tel.rassus.lab2.util;
+package hr.fer.tel.rassus.lab2.config;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 
+import java.time.Duration;
 import java.util.Properties;
 
-public final class KafkaConfig {
+public class Configurations {
+
+    public static final double LOSS_RATE = 0.3;
+    public static final int AVERAGE_DELAY = 1000;
+    public static final Duration CONSUMER_POLL_TIMEOUT = Duration.ofMillis(1_000);
 
     public static Properties consumerProps(String groupId) {
         Properties props = new Properties();

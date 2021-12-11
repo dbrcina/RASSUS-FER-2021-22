@@ -3,11 +3,11 @@ package hr.fer.tel.rassus.lab2.node;
 import hr.fer.tel.rassus.lab2.network.EmulatedSystemClock;
 import hr.fer.tel.rassus.lab2.network.OffsetBasedEmulatedSystemClock;
 import hr.fer.tel.rassus.lab2.network.SimpleSimulatedDatagramSocket;
-import hr.fer.tel.rassus.lab2.node.message.AckMessage;
 import hr.fer.tel.rassus.lab2.node.model.NodeModel;
 import hr.fer.tel.rassus.lab2.node.worker.ReceiveWorker;
 import hr.fer.tel.rassus.lab2.node.worker.SendWorker;
 import hr.fer.tel.rassus.lab2.node.worker.UsefulWorker;
+import hr.fer.tel.rassus.lab2.util.Pair;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -19,25 +19,22 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Queue;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Logger;
 
-import static hr.fer.tel.rassus.lab2.util.KafkaConfig.consumerProps;
-import static hr.fer.tel.rassus.lab2.util.KafkaConfig.producerProps;
+import static hr.fer.tel.rassus.lab2.config.Configurations.*;
 
-public final class Node {
+public class Node {
 
-    private static final Duration POLL_TIMEOUT = Duration.ofMillis(1_000);
-    private static final double LOSS_RATE = 0.3;
-    private static final int AVERAGE_DELAY = 1000;
+    private static final Logger logger = Logger.getLogger(Node.class.getName());
 
     private final NodeModel model;
     private final AtomicLong timeOffset;
@@ -45,7 +42,7 @@ public final class Node {
     private final AtomicBoolean running;
     private final Collection<NodeModel> peerNetwork;
     private final BlockingQueue<DatagramPacket> sendQueue;
-    private final Queue<AckMessage> ackRcvQueue;
+    private final Map<Integer, Pair<DatagramPacket, Long>> unAckPackets;
 
     public Node(int id, String host, int port) {
         model = new NodeModel(id, host, port);
@@ -54,7 +51,7 @@ public final class Node {
         running = new AtomicBoolean();
         peerNetwork = new HashSet<>();
         sendQueue = new LinkedBlockingQueue<>();
-        ackRcvQueue = new ConcurrentLinkedQueue<>();
+        unAckPackets = new ConcurrentHashMap<>();
     }
 
     // This will work only when messages are ordered in the next order:
@@ -63,13 +60,15 @@ public final class Node {
         try (Consumer<String, String> consumer = new KafkaConsumer<>(consumerProps(Integer.toString(model.getId())));
              Producer<String, String> producer = new KafkaProducer<>(producerProps());
              DatagramSocket socket = new SimpleSimulatedDatagramSocket(model.getPort(), LOSS_RATE, AVERAGE_DELAY, running)) {
+            socket.setSoTimeout(10);
             consumer.subscribe(Arrays.asList("Command", "Register"));
             handleStart(consumer);
             producer.send(new ProducerRecord<>("Register", NodeModel.toJson(model)));
             registrationProcessing(consumer);
             new Thread(new UsefulWorker(model.getId(), clock, running, peerNetwork, sendQueue)).start();
-            new Thread(new ReceiveWorker(model.getId(), socket, running, ackRcvQueue)).start();
-            new Thread(new SendWorker(socket, running, sendQueue, ackRcvQueue)).start();
+            new Thread(new ReceiveWorker(model.getId(), socket, running, sendQueue, unAckPackets)).start();
+            new Thread(new SendWorker(socket, running, sendQueue, unAckPackets)).start();
+            logger.info("Node successfully started all workers!");
             handleStop(consumer);
         } catch (SocketException e) {
             e.printStackTrace();
@@ -84,7 +83,7 @@ public final class Node {
         handleCommand(consumer, "stop", o -> {
             running.set(false);
             try {
-                // So others can see that running is set to false.
+                logger.info("Received 'stop' command. Sleeping for a bit so all workers can exit properly!");
                 Thread.sleep(2_000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -98,7 +97,7 @@ public final class Node {
             java.util.function.Consumer<Object> action) {
         boolean exit = false;
         do {
-            for (ConsumerRecord<String, String> record : consumer.poll(POLL_TIMEOUT)) {
+            for (ConsumerRecord<String, String> record : consumer.poll(CONSUMER_POLL_TIMEOUT)) {
                 if ("command".equalsIgnoreCase(record.topic())) {
                     if (command.equalsIgnoreCase(record.value())) {
                         action.accept(null);
@@ -118,7 +117,7 @@ public final class Node {
             e.printStackTrace();
         }
         while (true) {
-            ConsumerRecords<String, String> records = consumer.poll(POLL_TIMEOUT);
+            ConsumerRecords<String, String> records = consumer.poll(CONSUMER_POLL_TIMEOUT);
             if (records.isEmpty()) break;
             for (ConsumerRecord<String, String> record : records) {
                 if ("register".equalsIgnoreCase(record.topic())) {

@@ -23,8 +23,16 @@ public abstract class SocketMessage implements Serializable {
         messageId = messageCounter++;
     }
 
+    public int getSenderId() {
+        return senderId;
+    }
+
     public Type getType() {
         return type;
+    }
+
+    public int getMessageId() {
+        return messageId;
     }
 
     public static byte[] serialize(SocketMessage m) throws IOException {

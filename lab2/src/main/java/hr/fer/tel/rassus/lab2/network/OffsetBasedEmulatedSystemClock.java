@@ -2,7 +2,7 @@ package hr.fer.tel.rassus.lab2.network;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-public final class OffsetBasedEmulatedSystemClock extends EmulatedSystemClock {
+public class OffsetBasedEmulatedSystemClock extends EmulatedSystemClock {
 
     private final EmulatedSystemClock clock;
     private final AtomicLong offset;
