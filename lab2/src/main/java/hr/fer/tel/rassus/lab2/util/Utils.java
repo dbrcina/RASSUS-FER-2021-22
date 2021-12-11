@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.util.Arrays;
+import java.util.Collection;
 
 public class Utils {
 
@@ -16,6 +17,10 @@ public class Utils {
     public static DatagramPacket createSendPacket(SocketMessage m, InetAddress address, int port) throws IOException {
         byte[] sendBuf = SocketMessage.serialize(m);
         return new DatagramPacket(sendBuf, sendBuf.length, address, port);
+    }
+
+    public static void printStats(Collection<SocketMessage> messages) {
+
     }
 
 }

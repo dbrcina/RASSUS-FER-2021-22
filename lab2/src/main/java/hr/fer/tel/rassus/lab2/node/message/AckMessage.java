@@ -9,8 +9,8 @@ public class AckMessage extends SocketMessage {
 
     private final int messageIdToBeAck;
 
-    public AckMessage(int senderId, int messageIdToBeAck) {
-        super(senderId, Type.ACK);
+    public AckMessage(int senderId, long scalarTimestamp, int messageIdToBeAck) {
+        super(senderId, scalarTimestamp, Type.ACK);
         this.messageIdToBeAck = messageIdToBeAck;
     }
 

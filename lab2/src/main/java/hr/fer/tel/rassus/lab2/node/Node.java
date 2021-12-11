@@ -1,13 +1,15 @@
 package hr.fer.tel.rassus.lab2.node;
 
+import hr.fer.tel.rassus.lab2.network.ConcurrentEmulatedSystemClock;
 import hr.fer.tel.rassus.lab2.network.EmulatedSystemClock;
-import hr.fer.tel.rassus.lab2.network.OffsetBasedEmulatedSystemClock;
 import hr.fer.tel.rassus.lab2.network.SimpleSimulatedDatagramSocket;
+import hr.fer.tel.rassus.lab2.node.message.SocketMessage;
 import hr.fer.tel.rassus.lab2.node.model.NodeModel;
 import hr.fer.tel.rassus.lab2.node.worker.ReceiveWorker;
 import hr.fer.tel.rassus.lab2.node.worker.SendWorker;
 import hr.fer.tel.rassus.lab2.node.worker.UsefulWorker;
 import hr.fer.tel.rassus.lab2.util.Pair;
+import hr.fer.tel.rassus.lab2.util.Utils;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -23,11 +25,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import static hr.fer.tel.rassus.lab2.config.Configurations.*;
@@ -37,21 +36,30 @@ public class Node {
     private static final Logger logger = Logger.getLogger(Node.class.getName());
 
     private final NodeModel model;
-    private final AtomicLong timeOffset;
-    private final EmulatedSystemClock clock;
+    private final ConcurrentEmulatedSystemClock clock;
     private final AtomicBoolean running;
     private final Collection<NodeModel> peerNetwork;
     private final BlockingQueue<DatagramPacket> sendQueue;
     private final Map<Integer, Pair<DatagramPacket, Long>> unAckPackets;
+    private final Collection<SocketMessage> tempMessages;
+    private final Collection<SocketMessage> messagesAccumulator;
+    private final ScheduledExecutorService scheduler;
+    private final java.util.function.Consumer<SocketMessage> messageCollectionsUpdater;
 
     public Node(int id, String host, int port) {
         model = new NodeModel(id, host, port);
-        timeOffset = new AtomicLong();
-        clock = new OffsetBasedEmulatedSystemClock(new EmulatedSystemClock(), timeOffset);
+        clock = new ConcurrentEmulatedSystemClock(new EmulatedSystemClock());
         running = new AtomicBoolean();
         peerNetwork = new HashSet<>();
         sendQueue = new LinkedBlockingQueue<>();
         unAckPackets = new ConcurrentHashMap<>();
+        tempMessages = new ConcurrentLinkedQueue<>();
+        messagesAccumulator = new ConcurrentLinkedQueue<>();
+        scheduler = Executors.newScheduledThreadPool(1);
+        messageCollectionsUpdater = m -> {
+            tempMessages.add(m);
+            messagesAccumulator.add(m);
+        };
     }
 
     // This will work only when messages are ordered in the next order:
@@ -65,13 +73,19 @@ public class Node {
             handleStart(consumer);
             producer.send(new ProducerRecord<>("Register", NodeModel.toJson(model)));
             registrationProcessing(consumer);
-            new Thread(new UsefulWorker(model.getId(), clock, running, peerNetwork, sendQueue)).start();
-            new Thread(new ReceiveWorker(model.getId(), socket, running, sendQueue, unAckPackets)).start();
+            new Thread(new UsefulWorker(model.getId(), clock, running, peerNetwork, sendQueue, messageCollectionsUpdater)).start();
+            new Thread(new ReceiveWorker(model.getId(), clock, socket, running, sendQueue, unAckPackets, messageCollectionsUpdater)).start();
             new Thread(new SendWorker(socket, running, sendQueue, unAckPackets)).start();
+            scheduler.scheduleAtFixedRate(() -> {
+                Utils.printStats(tempMessages);
+                tempMessages.clear();
+            }, 2, 5, TimeUnit.SECONDS);
             logger.info("Node successfully started all workers!");
             handleStop(consumer);
         } catch (SocketException e) {
             e.printStackTrace();
+        } finally {
+            scheduler.shutdown();
         }
     }
 
@@ -84,7 +98,7 @@ public class Node {
             running.set(false);
             try {
                 logger.info("Received 'stop' command. Sleeping for a bit so all workers can exit properly!");
-                Thread.sleep(2_000);
+                Thread.sleep(3_000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

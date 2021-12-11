@@ -9,8 +9,8 @@ public class DataMessage extends SocketMessage {
 
     private final double data;
 
-    public DataMessage(int senderId, double data) {
-        super(senderId, Type.DATA);
+    public DataMessage(int senderId, long scalarTimestamp, double data) {
+        super(senderId, scalarTimestamp, Type.DATA);
         this.data = data;
     }
 

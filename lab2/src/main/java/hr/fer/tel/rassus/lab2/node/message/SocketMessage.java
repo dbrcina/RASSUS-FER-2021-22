@@ -16,15 +16,25 @@ public abstract class SocketMessage implements Serializable {
     private final int senderId;
     private final Type type;
     private final int messageId;
+    private long scalarTimestamp;
 
-    protected SocketMessage(int senderId, Type type) {
+    protected SocketMessage(int senderId, long scalarTimestamp, Type type) {
         this.senderId = senderId;
+        this.scalarTimestamp = scalarTimestamp;
         this.type = type;
         messageId = messageCounter++;
     }
 
     public int getSenderId() {
         return senderId;
+    }
+
+    public long getScalarTimestamp() {
+        return scalarTimestamp;
+    }
+
+    public void setScalarTimestamp(long scalarTimestamp) {
+        this.scalarTimestamp = scalarTimestamp;
     }
 
     public Type getType() {
