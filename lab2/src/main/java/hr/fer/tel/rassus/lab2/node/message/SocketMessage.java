@@ -1,6 +1,9 @@
 package hr.fer.tel.rassus.lab2.node.message;
 
+import hr.fer.tel.rassus.lab2.util.Vector;
+
 import java.io.*;
+import java.util.Objects;
 
 public abstract class SocketMessage implements Serializable {
 
@@ -13,20 +16,30 @@ public abstract class SocketMessage implements Serializable {
         ACK, DATA
     }
 
+    private final int messageId;
     private final int senderId;
     private final Type type;
-    private final int messageId;
     private long scalarTimestamp;
+    private Vector vectorTimestamp;
 
-    protected SocketMessage(int senderId, long scalarTimestamp, Type type) {
-        this.senderId = senderId;
-        this.scalarTimestamp = scalarTimestamp;
-        this.type = type;
+    protected SocketMessage(int senderId, Type type, long scalarTimestamp, Vector vectorTimestamp) {
         messageId = messageCounter++;
+        this.senderId = senderId;
+        this.type = type;
+        this.scalarTimestamp = scalarTimestamp;
+        this.vectorTimestamp = vectorTimestamp;
+    }
+
+    public int getMessageId() {
+        return messageId;
     }
 
     public int getSenderId() {
         return senderId;
+    }
+
+    public Type getType() {
+        return type;
     }
 
     public long getScalarTimestamp() {
@@ -37,12 +50,24 @@ public abstract class SocketMessage implements Serializable {
         this.scalarTimestamp = scalarTimestamp;
     }
 
-    public Type getType() {
-        return type;
+    public Vector getVectorTimestamp() {
+        return vectorTimestamp;
     }
 
-    public int getMessageId() {
-        return messageId;
+    public void setVectorTimestamp(Vector vectorTimestamp) {
+        this.vectorTimestamp = vectorTimestamp;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof SocketMessage that)) return false;
+        return messageId == that.messageId && senderId == that.senderId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(messageId, senderId);
     }
 
     public static byte[] serialize(SocketMessage m) throws IOException {

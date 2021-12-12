@@ -1,5 +1,7 @@
 package hr.fer.tel.rassus.lab2.node.message;
 
+import hr.fer.tel.rassus.lab2.util.Vector;
+
 import java.io.Serial;
 
 public class AckMessage extends SocketMessage {
@@ -9,8 +11,8 @@ public class AckMessage extends SocketMessage {
 
     private final int messageIdToBeAck;
 
-    public AckMessage(int senderId, long scalarTimestamp, int messageIdToBeAck) {
-        super(senderId, scalarTimestamp, Type.ACK);
+    public AckMessage(int senderId, long scalarTimestamp, Vector vectorTimestamp, int messageIdToBeAck) {
+        super(senderId, Type.ACK, scalarTimestamp, vectorTimestamp);
         this.messageIdToBeAck = messageIdToBeAck;
     }
 

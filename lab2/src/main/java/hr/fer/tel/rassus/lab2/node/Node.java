@@ -3,146 +3,157 @@ package hr.fer.tel.rassus.lab2.node;
 import hr.fer.tel.rassus.lab2.network.ConcurrentEmulatedSystemClock;
 import hr.fer.tel.rassus.lab2.network.EmulatedSystemClock;
 import hr.fer.tel.rassus.lab2.network.SimpleSimulatedDatagramSocket;
+import hr.fer.tel.rassus.lab2.node.message.DataMessage;
 import hr.fer.tel.rassus.lab2.node.message.SocketMessage;
 import hr.fer.tel.rassus.lab2.node.model.NodeModel;
+import hr.fer.tel.rassus.lab2.node.worker.PrintWorker;
 import hr.fer.tel.rassus.lab2.node.worker.ReceiveWorker;
 import hr.fer.tel.rassus.lab2.node.worker.SendWorker;
-import hr.fer.tel.rassus.lab2.node.worker.UsefulWorker;
 import hr.fer.tel.rassus.lab2.util.Pair;
 import hr.fer.tel.rassus.lab2.util.Utils;
-import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import hr.fer.tel.rassus.lab2.util.Vector;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.SocketException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
+import java.net.InetAddress;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
-import static hr.fer.tel.rassus.lab2.config.Configurations.*;
+import static hr.fer.tel.rassus.lab2.config.Configurations.AVERAGE_DELAY;
+import static hr.fer.tel.rassus.lab2.config.Configurations.LOSS_RATE;
 
-public class Node {
+public class Node implements Runnable {
 
-    private static final Logger logger = Logger.getLogger(Node.class.getName());
+    private static final Logger logger = LogManager.getLogger(Node.class);
 
     private final NodeModel model;
-    private final ConcurrentEmulatedSystemClock clock;
     private final AtomicBoolean running;
     private final Collection<NodeModel> peerNetwork;
-    private final BlockingQueue<DatagramPacket> sendQueue;
-    private final Map<Integer, Pair<DatagramPacket, Long>> unAckPackets;
-    private final Collection<SocketMessage> tempMessages;
-    private final Collection<SocketMessage> messagesAccumulator;
-    private final ScheduledExecutorService scheduler;
-    private final java.util.function.Consumer<SocketMessage> messageCollectionsUpdater;
+    private final Collection<DataMessage> tempMessages;
+    private final Collection<DataMessage> scalarTimestampSorted;
+    private final Collection<DataMessage> vectorTimestampSorted;
 
-    public Node(int id, String host, int port) {
-        model = new NodeModel(id, host, port);
-        clock = new ConcurrentEmulatedSystemClock(new EmulatedSystemClock());
-        running = new AtomicBoolean();
-        peerNetwork = new HashSet<>();
-        sendQueue = new LinkedBlockingQueue<>();
-        unAckPackets = new ConcurrentHashMap<>();
-        tempMessages = new ConcurrentLinkedQueue<>();
-        messagesAccumulator = new ConcurrentLinkedQueue<>();
-        scheduler = Executors.newScheduledThreadPool(1);
-        messageCollectionsUpdater = m -> {
-            tempMessages.add(m);
-            messagesAccumulator.add(m);
-        };
+    private DatagramSocket socket;
+    private ConcurrentEmulatedSystemClock clock;
+    private Vector vectorTimestamp;
+    private BlockingQueue<DatagramPacket> sendQueue;
+    private Map<Integer, Pair<DatagramPacket, Long>> unAckPackets;
+    private ScheduledExecutorService scheduler;
+    private List<Double> readings;
+
+    public Node(
+            NodeModel model,
+            AtomicBoolean running,
+            Collection<NodeModel> peerNetwork,
+            Collection<DataMessage> tempMessages,
+            Collection<DataMessage> scalarTimestampSorted,
+            Collection<DataMessage> vectorTimestampSorted) {
+        this.model = model;
+        this.running = running;
+        this.peerNetwork = peerNetwork;
+        this.tempMessages = tempMessages;
+        this.scalarTimestampSorted = scalarTimestampSorted;
+        this.vectorTimestampSorted = vectorTimestampSorted;
     }
 
-    // This will work only when messages are ordered in the next order:
-    // Start -> Register Register ... Register -> Stop
-    public void loop() {
-        try (Consumer<String, String> consumer = new KafkaConsumer<>(consumerProps(Integer.toString(model.getId())));
-             Producer<String, String> producer = new KafkaProducer<>(producerProps());
-             DatagramSocket socket = new SimpleSimulatedDatagramSocket(model.getPort(), LOSS_RATE, AVERAGE_DELAY, running)) {
-            socket.setSoTimeout(10);
-            consumer.subscribe(Arrays.asList("Command", "Register"));
-            handleStart(consumer);
-            producer.send(new ProducerRecord<>("Register", NodeModel.toJson(model)));
-            registrationProcessing(consumer);
-            new Thread(new UsefulWorker(model.getId(), clock, running, peerNetwork, sendQueue, messageCollectionsUpdater)).start();
-            new Thread(new ReceiveWorker(model.getId(), clock, socket, running, sendQueue, unAckPackets, messageCollectionsUpdater)).start();
-            new Thread(new SendWorker(socket, running, sendQueue, unAckPackets)).start();
-            scheduler.scheduleAtFixedRate(() -> {
-                Utils.printStats(tempMessages);
-                tempMessages.clear();
-            }, 2, 5, TimeUnit.SECONDS);
-            logger.info("Node successfully started all workers!");
-            handleStop(consumer);
-        } catch (SocketException e) {
-            e.printStackTrace();
+    @Override
+    public void run() {
+        try {
+            startup();
+            loop();
+        } catch (Exception e) {
+            logger.log(Level.FATAL, "", e);
         } finally {
             scheduler.shutdown();
+            socket.close();
+        }
+
+    }
+
+    private void startup() throws IOException {
+        logger.info("Startup...");
+        socket = new SimpleSimulatedDatagramSocket(model.getPort(), LOSS_RATE, AVERAGE_DELAY, running);
+        socket.setSoTimeout(10);
+        clock = new ConcurrentEmulatedSystemClock(new EmulatedSystemClock());
+        initVectorTimestamp();
+        sendQueue = new LinkedBlockingQueue<>();
+        unAckPackets = new ConcurrentHashMap<>();
+        scheduler = Executors.newScheduledThreadPool(1);
+        prepareReadings();
+        startWorkers();
+    }
+
+    private void loop() throws IOException, InterruptedException {
+        logger.info("Looping...");
+        while (running.get()) {
+            long start = System.currentTimeMillis();
+            // Generate reading
+            double reading = generateReading();
+            // Save reading to temp collection
+            tempMessages.add(new DataMessage(
+                    model.getId(),
+                    clock.currentTimeMillis(null),
+                    vectorTimestamp.update(model.getId(), null, true),
+                    reading));
+            // Send reading to peer network
+            for (NodeModel peer : peerNetwork) {
+                SocketMessage m = new DataMessage(
+                        model.getId(),
+                        clock.currentTimeMillis(null),
+                        vectorTimestamp.update(model.getId(), null, true),
+                        reading);
+                sendQueue.put(Utils.createSendPacket(m, InetAddress.getByName(peer.getAddress()), peer.getPort()));
+            }
+            // Do the work every 1s...
+            Thread.sleep(Math.max(0, 1000 - (System.currentTimeMillis() - start)));
         }
     }
 
-    private void handleStart(Consumer<String, String> consumer) {
-        handleCommand(consumer, "start", o -> running.set(true));
+    private void initVectorTimestamp() {
+        Collection<Integer> ids = new ArrayList<>();
+        peerNetwork.forEach(m -> ids.add(m.getId()));
+        ids.add(model.getId());
+        vectorTimestamp = new Vector(ids.stream().mapToInt(i -> i).toArray());
     }
 
-    private void handleStop(Consumer<String, String> consumer) {
-        handleCommand(consumer, "stop", o -> {
-            running.set(false);
-            try {
-                logger.info("Received 'stop' command. Sleeping for a bit so all workers can exit properly!");
-                Thread.sleep(3_000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
-    }
-
-    private void handleCommand(
-            Consumer<String, String> consumer,
-            String command,
-            java.util.function.Consumer<Object> action) {
-        boolean exit = false;
-        do {
-            for (ConsumerRecord<String, String> record : consumer.poll(CONSUMER_POLL_TIMEOUT)) {
-                if ("command".equalsIgnoreCase(record.topic())) {
-                    if (command.equalsIgnoreCase(record.value())) {
-                        action.accept(null);
-                        exit = true;
-                        break;
-                    }
+    private void prepareReadings() throws IOException {
+        readings = new ArrayList<>(100);
+        try (InputStream is = Node.class.getClassLoader().getResourceAsStream("readings.csv");
+             BufferedReader br = new BufferedReader(new InputStreamReader(Objects.requireNonNull(is)))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.startsWith("Temp")) continue;
+                String[] parts = line.split(",", -1);
+                if (parts[3].isEmpty()) {
+                    parts[3] = "0";
                 }
+                readings.add(Double.parseDouble(parts[3]));
             }
-            consumer.commitAsync();
-        } while (!exit);
+        }
     }
 
-    private void registrationProcessing(Consumer<String, String> consumer) {
-        try {
-            Thread.sleep(1_000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        while (true) {
-            ConsumerRecords<String, String> records = consumer.poll(CONSUMER_POLL_TIMEOUT);
-            if (records.isEmpty()) break;
-            for (ConsumerRecord<String, String> record : records) {
-                if ("register".equalsIgnoreCase(record.topic())) {
-                    NodeModel otherModel = NodeModel.fromJson(record.value());
-                    if (!otherModel.equals(model)) {
-                        peerNetwork.add(otherModel);
-                    }
-                }
-            }
-            consumer.commitAsync();
-        }
+    private void startWorkers() {
+        Runnable rcvWorker = new ReceiveWorker(
+                model.getId(), clock, vectorTimestamp, socket, running, sendQueue, unAckPackets, tempMessages);
+        Runnable sendWorker = new SendWorker(socket, running, sendQueue, unAckPackets);
+        Runnable printWorker = new PrintWorker(tempMessages, scalarTimestampSorted, vectorTimestampSorted);
+        new Thread(rcvWorker).start();
+        new Thread(sendWorker).start();
+        scheduler.scheduleAtFixedRate(printWorker, 5, 5, TimeUnit.SECONDS);
+        logger.info("Successfully started all workers!");
+    }
+
+    private double generateReading() {
+        long secondsPassed = TimeUnit.MILLISECONDS.toSeconds(clock.currentTimeMillis(null));
+        return readings.get((int) (secondsPassed % readings.size()));
     }
 
 }

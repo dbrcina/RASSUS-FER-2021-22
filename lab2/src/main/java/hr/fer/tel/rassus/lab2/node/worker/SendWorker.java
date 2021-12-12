@@ -4,6 +4,9 @@ import hr.fer.tel.rassus.lab2.config.Configurations;
 import hr.fer.tel.rassus.lab2.node.message.SocketMessage;
 import hr.fer.tel.rassus.lab2.util.Pair;
 import hr.fer.tel.rassus.lab2.util.Utils;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -11,12 +14,10 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class SendWorker implements Runnable {
 
-    private static final Logger logger = Logger.getLogger(SendWorker.class.getName());
+    private static final Logger logger = LogManager.getLogger(SendWorker.class);
 
     private final DatagramSocket socket;
     private final AtomicBoolean running;
@@ -63,7 +64,7 @@ public class SendWorker implements Runnable {
                     }
                 }
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "", e);
+                logger.log(Level.FATAL, "", e);
                 break;
             }
         }
