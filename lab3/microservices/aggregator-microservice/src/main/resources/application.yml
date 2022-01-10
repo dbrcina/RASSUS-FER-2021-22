@@ -1,0 +1,9 @@
+server:
+  port: 8002
+
+microservices:
+  humidity: http://localhost:8000/readings/current
+  temperature: http://localhost:8001/readings/current
+
+temperature:
+  unit: K
