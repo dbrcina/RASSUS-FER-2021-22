@@ -1,12 +1,10 @@
 package hr.fer.tel.rassus.lab3;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,26 +13,23 @@ import java.util.List;
 @RequestMapping("/readings")
 public class ReadingController {
 
-    @Value("${microservices.humidity}")
-    private String humidityMicroservice;
-
-    @Value("${microservices.temperature}")
-    private String temperatureMicroservice;
-
     @Value("${temperature.unit}")
     private String temperatureUnit;
 
-    private final RestTemplate restTemplate;
+    private final AggregatorMicroserviceApplication.HumidityMicroservice humidityMicroservice;
+    private final AggregatorMicroserviceApplication.TemperatureMicroservice temperatureMicroservice;
 
-    public ReadingController(RestTemplateBuilder restTemplateBuilder) {
-        this.restTemplate = restTemplateBuilder.build();
+    public ReadingController(AggregatorMicroserviceApplication.HumidityMicroservice humidityMicroservice,
+                             AggregatorMicroserviceApplication.TemperatureMicroservice temperatureMicroservice) {
+        this.humidityMicroservice = humidityMicroservice;
+        this.temperatureMicroservice = temperatureMicroservice;
     }
 
     @GetMapping("")
     public ResponseEntity<List<GetReadingDto>> fetchCurrentReadings() {
         List<GetReadingDto> readings = new ArrayList<>();
-        GetReadingDto humidityReading = restTemplate.getForObject(humidityMicroservice, GetReadingDto.class);
-        GetReadingDto temperatureReading = restTemplate.getForObject(temperatureMicroservice, GetReadingDto.class);
+        GetReadingDto humidityReading = humidityMicroservice.getReading();
+        GetReadingDto temperatureReading = temperatureMicroservice.getReading();
         if (humidityReading != null) {
             readings.add(humidityReading);
         }

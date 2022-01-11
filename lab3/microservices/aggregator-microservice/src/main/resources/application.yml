@@ -1,6 +1,10 @@
 server:
   port: 8002
 
+microservices:
+  humidity: humidity-microservice
+  temperature: temperature-microservice
+
 spring:
   application:
     name: aggregator-microservice

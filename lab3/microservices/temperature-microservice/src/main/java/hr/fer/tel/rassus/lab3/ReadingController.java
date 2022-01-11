@@ -17,7 +17,7 @@ public class ReadingController {
 
     @GetMapping("/current")
     public ResponseEntity<GetReadingDto> fetchCurrentReading() {
-        Reading reading = readingRepository.findById(System.currentTimeMillis() % 100).get();
+        Reading reading = readingRepository.findById((System.currentTimeMillis() % 100) + 1).get();
         return ResponseEntity.ok(GetReadingDto.fromReading(reading));
     }
 
