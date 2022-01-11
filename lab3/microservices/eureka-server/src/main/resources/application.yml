@@ -1,11 +1,8 @@
-server:
-  port: 8002
-
 spring:
   application:
-    name: aggregator-microservice
+    name: eureka-server
   cloud:
     config:
       uri: http://localhost:8888/
   config:
-    import: "configserver:"
+    import: "optional:configserver:"
