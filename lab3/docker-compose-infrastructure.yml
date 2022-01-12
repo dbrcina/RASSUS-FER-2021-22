@@ -1,0 +1,8 @@
+version: "3.7"
+
+services:
+  config-server:
+    image: config-server-jib:1.0
+
+  eureka-server:
+    image: eureka-server-jib:1.0

@@ -1,0 +1,20 @@
+version: "3.7"
+
+services:
+  humidity-microservice:
+    image: humidity-microservice-jib:1.0
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+
+  temperature-microservice:
+    image: temperature-microservice-jib:1.0
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+
+  aggregator-microservice:
+    image: aggregator-microservice-jib:1.0
+    ports:
+      - "8002:8002"
+    environment:
+      SPRING_CLOUD_CONFIG_URI: http://config-server:8888/
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
