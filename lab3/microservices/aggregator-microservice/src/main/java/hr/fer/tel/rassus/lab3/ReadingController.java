@@ -13,16 +13,16 @@ import java.util.List;
 @RequestMapping("/readings")
 public class ReadingController {
 
-    @Value("${temperature.unit}")
-    private String temperatureUnit;
+    private final HumidityMicroservice humidityMicroservice;
+    private final TemperatureMicroservice temperatureMicroservice;
+    private final String temperatureUnit;
 
-    private final AggregatorMicroserviceApplication.HumidityMicroservice humidityMicroservice;
-    private final AggregatorMicroserviceApplication.TemperatureMicroservice temperatureMicroservice;
-
-    public ReadingController(AggregatorMicroserviceApplication.HumidityMicroservice humidityMicroservice,
-                             AggregatorMicroserviceApplication.TemperatureMicroservice temperatureMicroservice) {
+    public ReadingController(HumidityMicroservice humidityMicroservice,
+                             TemperatureMicroservice temperatureMicroservice,
+                             @Value("${temperature.unit}") String temperatureUnit) {
         this.humidityMicroservice = humidityMicroservice;
         this.temperatureMicroservice = temperatureMicroservice;
+        this.temperatureUnit = temperatureUnit;
     }
 
     @GetMapping("")
