@@ -2,10 +2,11 @@ plugins {
     id 'org.springframework.boot' version '2.6.2'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
+    id 'com.google.cloud.tools.jib' version '3.1.4'
 }
 
 group = 'hr.fer.tel.rassus'
-version = '0.0.1-SNAPSHOT'
+version = '1.0'
 sourceCompatibility = '17'
 
 repositories {
@@ -33,3 +34,20 @@ dependencyManagement {
 test {
     useJUnitPlatform()
 }
+
+jib {
+    from {
+        image = 'openjdk:17.0.1-oracle'
+    }
+    to {
+        image = "${project.name}-jib:${version}"
+    }
+    container {
+        appRoot = '/opt'
+        ports = ['8000']
+        jvmFlags = ['-Djava.security.egd=file:/dev/./urandom']
+        creationTime = "USE_CURRENT_TIMESTAMP"
+    }
+}
+
+assemble.dependsOn jibDockerBuild
