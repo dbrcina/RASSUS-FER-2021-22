@@ -8,4 +8,4 @@ spring:
     config:
       server:
         git:
-          uri: file:${user.home}/Desktop/RASSUS-FER-2021-22/lab3/config/
+          uri: https://github.com/dbrcina/config-server/
